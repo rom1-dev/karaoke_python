@@ -26,41 +26,88 @@ def parse_lyrics_txt_file(file_path):
                 flag=True
     return lyrics
 
-def find_osu_file():
-    for root, dirs, files in os.walk("."):
-        for file in files:
-            if file.endswith(".osu"):
-                return os.path.join(root, file)
+def find_osu_file(name):
+    for root, dirs, files in os.walk("./songs"):
+        for dirname in dirs:
+            if dirname == name:
+                for file in os.listdir(os.path.join(root, dirname)):
+                    if file.endswith(".osu"):
+                        return os.path.join(root, dirname, file)
     return None
 
-def find_lyrics_txt_file():
-    for root, dirs, files in os.walk("."):
-        for file in files:
-            if file.endswith(".txt"):
-                return os.path.join(root, file)
+def find_lyrics_txt_file(name):
+    for root, dirs, files in os.walk("./songs"):
+        for dirname in dirs:
+            if dirname == name:
+                for file in os.listdir(os.path.join(root, dirname)):
+                    if file.endswith(".txt"):
+                        return os.path.join(root, dirname, file)
     return None
 
-def find_mp3_file():
-    for root, dirs, files in os.walk("."):
-        for file in files:
-            if file.endswith(".mp3"):
-                return os.path.join(root, file)
+def find_mp3_file(name):
+    for root, dirs, files in os.walk("./songs"):
+        for dirname in dirs:
+            if dirname == name:
+                for file in os.listdir(os.path.join(root, dirname)):
+                    if file.endswith(".mp3"):
+                        return os.path.join(root, dirname, file)
     return None
 
-hitpoints = parse_osu_file(find_osu_file())
-lyrics = parse_lyrics_txt_file(find_lyrics_txt_file())
-mp3_file = find_mp3_file()
+def list_songs():
+    songs = []
+    for root, dirs, files in os.walk("./songs"):
+        for dirname in dirs:
+            songs.append(dirname)
+    return songs
+
+#####################################################################################################
+
+os.system('cls' if os.name == 'nt' else 'clear')
+print("\033[?25h\033[0m")
+
+print("Liste des chansons disponibles :")
+songlist = list_songs()
+for i in songlist:
+    print(f"- {i}")
+path = input("Quelle chanson voulez-vous choisir ?\n")
+if path not in songlist:
+    raise ValueError(f"La chanson '{path}' n'est pas disponible.")
+print(f"Vous avez choisi la chanson : {path}")
+print()
+
+osu_file = find_osu_file(path)
+lyrics_txt_file = find_lyrics_txt_file(path)
+mp3_file = find_mp3_file(path)
+if osu_file is None:
+    raise FileNotFoundError(f"Le fichier osu n'a pas été trouvé dans le répertoire {path}")
+if lyrics_txt_file is None:
+    raise FileNotFoundError(f"Le fichier texte n'a pas été trouvé dans le répertoire {path}")
+if mp3_file is None:
+    raise FileNotFoundError(f"Le fichier mp3 n'a pas été trouvé dans le répertoire {path}")
+print(f"Fichier osu trouvé : {osu_file}")
+print(f"Fichier texte trouvé : {lyrics_txt_file}")
+print(f"Fichier mp3 trouvé : {mp3_file}")
+print()
+
+hitpoints = parse_osu_file(osu_file)
+lyrics = parse_lyrics_txt_file(lyrics_txt_file)
+# print(lyrics)
+
 # for i in x:
 #     print(i)
 
 ############################### paramètres ###############################
 
+
+
+afficher_suiv = True
 cb = [255, 0, 0]
 cf = [0, 255, 0]
 
 fluide = True
 maxtime = 0.5
-fluide2 = 0.05
+
+fluide2 = 0
 mintime = 0.01
 
 ##########################################################################
@@ -70,13 +117,13 @@ import pygame
 import time
 
 
-os.system('cls' if os.name == 'nt' else 'clear')
 
 print("\033[?25l\033[0m")
 
+
 timeprecision = 1/1000
 
-async def afficher_paroles(mot, pas, estpremier, estdernier, phrasesuivante, tempssuivant, fluide=True, fluide2=0):
+async def afficher_paroles(mot, pas, estpremier, estdernier, afficher_suiv, phrasesuivante, tempssuivant, fluide=True, fluide2=0):
     delai = pas * timeprecision
     suiv = tempssuivant * timeprecision - delai
     await asyncio.sleep(delai)
@@ -94,7 +141,8 @@ async def afficher_paroles(mot, pas, estpremier, estdernier, phrasesuivante, tem
     
     if estdernier:
         # print("\n")
-        print(f"\033[38;2;{cb[0]};{cb[1]};{cb[2]}m{phrasesuivante}\033[38;2;{cf[0]};{cf[1]};{cf[2]}m", end='\r')
+        if afficher_suiv and phrasesuivante != "":
+            print(f"\033[38;2;{cb[0]};{cb[1]};{cb[2]}m{phrasesuivante}\033[38;2;{cf[0]};{cf[1]};{cf[2]}m", end='\r')
         
  
 async def karaoke():
@@ -107,11 +155,13 @@ async def karaoke():
         return
 
     pygame.mixer.music.play()
-    print(f"Lecture de la musique : {mp3_file[2:]}\nParoles : {find_lyrics_txt_file()[2:]}\nvaleurs : {find_osu_file()[2:]}")
+    print(f"Lecture de la musique : {mp3_file[2:]}\nParoles : {lyrics_txt_file[2:]}\nvaleurs : {osu_file[2:]}")
 
     tasks = []
     itemps = 0
-    print(f"\033[38;2;{cb[0]};{cb[1]};{cb[2]}m{''.join(lyrics[0])}\033[38;2;{cf[0]};{cf[1]};{cf[2]}m", end='\r')
+    print("Bonne chanson !\n")
+    if afficher_suiv:
+        print(f"\033[38;2;{cb[0]};{cb[1]};{cb[2]}m{''.join(lyrics[0])}\033[38;2;{cf[0]};{cf[1]};{cf[2]}m", end='\r')
     for verse in range(len(lyrics)):
         for i, mot in enumerate(lyrics[verse]):
             if itemps < len(hitpoints):
@@ -122,7 +172,7 @@ async def karaoke():
                     phrasesuivante = "".join(lyrics[verse + 1]) if verse + 1 < len(lyrics) else ""
                     tempssuivant = int(hitpoints[itemps + 1]) if itemps + 1 < len(hitpoints) else 0
                     # print(f"Phrase suivante : {phrasesuivante}")
-                    task = asyncio.create_task(afficher_paroles(mot, pas, estpremier, estdernier, phrasesuivante, tempssuivant, fluide, fluide2))
+                    task = asyncio.create_task(afficher_paroles(mot, pas, estpremier, estdernier, afficher_suiv, phrasesuivante, tempssuivant, fluide, fluide2))
                     tasks.append(task)
                     itemps += 1
                 except ValueError:
