@@ -53,8 +53,17 @@ mp3_file = find_mp3_file()
 # for i in x:
 #     print(i)
 
+############################### paramètres ###############################
+
 cb = [255, 0, 0]
 cf = [0, 255, 0]
+
+fluide = True
+maxtime = 0.5
+fluide2 = 0.05
+mintime = 0.01
+
+##########################################################################
 
 import asyncio
 import pygame
@@ -67,10 +76,21 @@ print("\033[?25l\033[0m")
 
 timeprecision = 1/1000
 
-async def afficher_paroles(mot, pas, estpremier, estdernier, phrasesuivante):
+async def afficher_paroles(mot, pas, estpremier, estdernier, phrasesuivante, tempssuivant, fluide=True, fluide2=0):
     delai = pas * timeprecision
+    suiv = tempssuivant * timeprecision - delai
     await asyncio.sleep(delai)
-    print(mot, end='' if not estdernier else '\n')
+    if suiv > 0.1 and fluide:
+        for i in range(len(mot)):
+            print(mot[i], end='' if not (estdernier and i==len(mot)-1) else '\n')
+            if i < len(mot) - 1 and fluide2 == 0:
+                time.sleep(suiv/len(mot) if suiv < maxtime else 0.01)
+            elif i < len(mot) - 1 and fluide2 > 0 and fluide2*len(mot) < suiv:
+                time.sleep(fluide2)
+            elif i < len(mot) - 1 and fluide2 > 0 and fluide2*len(mot) >= suiv and mintime > 0:
+                time.sleep(mintime)
+    else:
+        print(mot, end='' if not (estdernier) else '\n')
     
     if estdernier:
         # print("\n")
@@ -100,8 +120,9 @@ async def karaoke():
                     estpremier = (i == 0)
                     estdernier = (i == len(lyrics[verse]) - 1)
                     phrasesuivante = "".join(lyrics[verse + 1]) if verse + 1 < len(lyrics) else ""
+                    tempssuivant = int(hitpoints[itemps + 1]) if itemps + 1 < len(hitpoints) else 0
                     # print(f"Phrase suivante : {phrasesuivante}")
-                    task = asyncio.create_task(afficher_paroles(mot, pas, estpremier, estdernier, phrasesuivante))
+                    task = asyncio.create_task(afficher_paroles(mot, pas, estpremier, estdernier, phrasesuivante, tempssuivant, fluide, fluide2))
                     tasks.append(task)
                     itemps += 1
                 except ValueError:
