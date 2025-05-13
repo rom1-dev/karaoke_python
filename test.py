@@ -32,6 +32,7 @@ mp3_file = "audio.mp3"
 
 import asyncio
 import pygame
+import time
 
 timeprecision = 1/1000
 
@@ -70,8 +71,11 @@ async def karaoke():
         else:
             continue
         break
-
     await asyncio.gather(*tasks)
+    while pygame.mixer.music.get_busy():
+        time.sleep(0.5)
+    pygame.mixer.music.stop()
+    pygame.mixer.quit()
 
 
 if __name__ == "__main__":
