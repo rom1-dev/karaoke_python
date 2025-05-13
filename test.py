@@ -1,3 +1,5 @@
+import os
+
 def parse_osu_file(file_path):
     hitobjects = []
     with open(file_path, 'r') as f:
@@ -24,24 +26,59 @@ def parse_lyrics_txt_file(file_path):
                 flag=True
     return lyrics
 
-hitpoints = parse_osu_file("test.osu")
-lyrics = parse_lyrics_txt_file("paroles.txt")
-mp3_file = "audio.mp3"
+def find_osu_file():
+    for root, dirs, files in os.walk("."):
+        for file in files:
+            if file.endswith(".osu"):
+                return os.path.join(root, file)
+    return None
+
+def find_lyrics_txt_file():
+    for root, dirs, files in os.walk("."):
+        for file in files:
+            if file.endswith(".txt"):
+                return os.path.join(root, file)
+    return None
+
+def find_mp3_file():
+    for root, dirs, files in os.walk("."):
+        for file in files:
+            if file.endswith(".mp3"):
+                return os.path.join(root, file)
+    return None
+
+hitpoints = parse_osu_file(find_osu_file())
+lyrics = parse_lyrics_txt_file(find_lyrics_txt_file())
+mp3_file = find_mp3_file()
 # for i in x:
 #     print(i)
+
+cb = [255, 0, 0]
+cf = [0, 255, 0]
 
 import asyncio
 import pygame
 import time
 
+
+os.system('cls' if os.name == 'nt' else 'clear')
+
+print("\033[?25l\033[0m")
+
 timeprecision = 1/1000
 
-async def afficher_paroles(mot, pas, estpremier):
+async def afficher_paroles(mot, pas, estpremier, estdernier, phrasesuivante):
     delai = pas * timeprecision
     await asyncio.sleep(delai)
-    print(mot if not estpremier else f"\n{mot}", end='')
-
+    print(mot, end='' if not estdernier else '\n')
+    
+    if estdernier:
+        # print("\n")
+        print(f"\033[38;2;{cb[0]};{cb[1]};{cb[2]}m{phrasesuivante}\033[38;2;{cf[0]};{cf[1]};{cf[2]}m", end='\r')
+        
+ 
 async def karaoke():
+    
     pygame.mixer.init()
     try:
         pygame.mixer.music.load(mp3_file)
@@ -50,17 +87,21 @@ async def karaoke():
         return
 
     pygame.mixer.music.play()
-    print(f"Lecture de la musique : {mp3_file}")
+    print(f"Lecture de la musique : {mp3_file[2:]}\nParoles : {find_lyrics_txt_file()[2:]}\nvaleurs : {find_osu_file()[2:]}")
 
     tasks = []
     itemps = 0
-    for verse in lyrics:
-        for i, mot in enumerate(verse):
+    print(f"\033[38;2;{cb[0]};{cb[1]};{cb[2]}m{''.join(lyrics[0])}\033[38;2;{cf[0]};{cf[1]};{cf[2]}m", end='\r')
+    for verse in range(len(lyrics)):
+        for i, mot in enumerate(lyrics[verse]):
             if itemps < len(hitpoints):
                 try:
                     pas = int(hitpoints[itemps])
                     estpremier = (i == 0)
-                    task = asyncio.create_task(afficher_paroles(mot, pas, estpremier))
+                    estdernier = (i == len(lyrics[verse]) - 1)
+                    phrasesuivante = "".join(lyrics[verse + 1]) if verse + 1 < len(lyrics) else ""
+                    # print(f"Phrase suivante : {phrasesuivante}")
+                    task = asyncio.create_task(afficher_paroles(mot, pas, estpremier, estdernier, phrasesuivante))
                     tasks.append(task)
                     itemps += 1
                 except ValueError:
@@ -80,6 +121,7 @@ async def karaoke():
 
 if __name__ == "__main__":
     asyncio.run(karaoke())
+    print("\033[?25h\033[0m")
 
 # for i in lyrics:
 #     print(i)
