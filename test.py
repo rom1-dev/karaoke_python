@@ -65,7 +65,7 @@ def list_json_files():
     for root, dirs, files in os.walk("./settings"):
         for file in files:
             if file.endswith(".json"):
-                json_files.append(file)
+                json_files.append(file[:-5])
     return json_files
 
 #####################################################################################################
@@ -86,10 +86,10 @@ print("Paramètres disponibles :")
 jsonlist = list_json_files()
 for i in jsonlist:
     print(f"- {i}")
-json = input("Quel fichier de paramètres voulez-vous choisir ?\n")
-if json not in jsonlist:
-    raise ValueError(f"Le fichier de paramètres '{json}' n'est pas disponible.")
-print(f"Vous avez choisi le fichier de paramètres : {json}")
+jsonsettings = input("Quel fichier de paramètres voulez-vous choisir ?\n")
+if jsonsettings not in jsonlist:
+    raise ValueError(f"Le fichier de paramètres '{jsonsettings}' n'est pas disponible.")
+print(f"Vous avez choisi le fichier de paramètres : {jsonsettings}")
 print()
 
 osu_file = find_osu_file(path)
@@ -117,7 +117,7 @@ lyrics = parse_lyrics_txt_file(lyrics_txt_file)
 
 import json
 
-with open(f"./settings/{json}", 'r', encoding='utf-8') as f:
+with open(f"./settings/{jsonsettings}.json", 'r', encoding='utf-8') as f:
     settings = json.load(f)
 
 skipintro = settings.get("skipintro", False)
@@ -149,7 +149,7 @@ fluide2 = settings.get("fluide2", 0)
 mintime = settings.get("mintime", 0.01)
 
 
-sautdeligne = 20
+sautdeligne = settings.get("sautdeligne", 0)
 
 ##########################################################################
 
