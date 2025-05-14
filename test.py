@@ -60,6 +60,14 @@ def list_songs():
             songs.append(dirname)
     return songs
 
+def list_json_files():
+    json_files = []
+    for root, dirs, files in os.walk("./settings"):
+        for file in files:
+            if file.endswith(".json"):
+                json_files.append(file)
+    return json_files
+
 #####################################################################################################
 
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -73,6 +81,15 @@ path = input("Quelle chanson voulez-vous choisir ?\n")
 if path not in songlist:
     raise ValueError(f"La chanson '{path}' n'est pas disponible.")
 print(f"Vous avez choisi la chanson : {path}")
+print()
+print("Paramètres disponibles :")
+jsonlist = list_json_files()
+for i in jsonlist:
+    print(f"- {i}")
+json = input("Quel fichier de paramètres voulez-vous choisir ?\n")
+if json not in jsonlist:
+    raise ValueError(f"Le fichier de paramètres '{json}' n'est pas disponible.")
+print(f"Vous avez choisi le fichier de paramètres : {json}")
 print()
 
 osu_file = find_osu_file(path)
@@ -98,32 +115,38 @@ lyrics = parse_lyrics_txt_file(lyrics_txt_file)
 
 ############################### paramètres ###############################
 
-skipintro = True
-introtime = 0.5
+import json
+
+with open(f"./settings/{json}", 'r', encoding='utf-8') as f:
+    settings = json.load(f)
+
+skipintro = settings.get("skipintro", False)
+introtime = settings.get("introtime", 0)
 
 
+afficher_suiv = settings.get("afficher_suiv", False)
 
+italiquedeb = settings.get("italiquedeb", False)
+italiquefin = settings.get("italiquefin", False)
 
-afficher_suiv = True
+soulignedeb = settings.get("soulignedeb", False)
+soulignefin = settings.get("soulignefin", False)
 
-italiquedeb = True
-italiquefin = False
+surlignedeb = settings.get("surlignedeb", False)
+surlignefin = settings.get("surlignefin", False)
 
-soulignedeb = False
-soulignefin = True
+grasdeb = settings.get("grasdeb", False)
+grasfin = settings.get("grasfin", False)
 
-grasdeb = False
-grasfin = True
+cb = settings.get("cb", [255, 255, 255])
+cf = settings.get("cf", [255, 255, 255])
 
-cb = [255, 0, 0]
-cf = [0, 255, 0]
+fluide = settings.get("fluide", False)
+maxtime = settings.get("maxtime", 0.5)
+maxtimestep = settings.get("maxtimestep", 0.02)
 
-fluide = True
-maxtime = 0.5
-maxtimestep = 0.02
-
-fluide2 = 0
-mintime = 0.01
+fluide2 = settings.get("fluide2", 0)
+mintime = settings.get("mintime", 0.01)
 
 
 sautdeligne = 20
@@ -148,6 +171,7 @@ def formaterdeb():
     deb += "\033[3m" if italiquedeb else ""
     deb += "\033[4m" if soulignedeb else ""
     deb += "\033[1m" if grasdeb else ""
+    deb += "\033[53m" if surlignedeb else ""
     return deb
 
 def formaterfin():
@@ -155,6 +179,7 @@ def formaterfin():
     fin += "\033[3m" if italiquefin else ""
     fin += "\033[4m" if soulignefin else ""
     fin += "\033[1m" if grasfin else ""
+    fin += "\033[53m" if surlignefin else ""
     return fin
 
 async def afficher_paroles(mot, pas, estpremier, estdernier, afficher_suiv, phrasesuivante, tempssuivant, fluide=True, fluide2=0):
