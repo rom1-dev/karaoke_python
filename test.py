@@ -98,17 +98,35 @@ lyrics = parse_lyrics_txt_file(lyrics_txt_file)
 
 ############################### paramètres ###############################
 
+skipintro = True
+introtime = 0.5
+
+
 
 
 afficher_suiv = True
+
+italiquedeb = True
+italiquefin = False
+
+soulignedeb = False
+soulignefin = True
+
+grasdeb = False
+grasfin = True
+
 cb = [255, 0, 0]
 cf = [0, 255, 0]
 
 fluide = True
 maxtime = 0.5
+maxtimestep = 0.02
 
 fluide2 = 0
 mintime = 0.01
+
+
+sautdeligne = 20
 
 ##########################################################################
 
@@ -116,12 +134,28 @@ import asyncio
 import pygame
 import time
 
+tps = 1000
+timeprecision = 1/tps
 
+intro = int(hitpoints[0])-introtime*tps if skipintro else 0
+if intro < 0:
+    intro = 0
 
 print("\033[?25l\033[0m")
 
+def formaterdeb():
+    deb = ""
+    deb += "\033[3m" if italiquedeb else ""
+    deb += "\033[4m" if soulignedeb else ""
+    deb += "\033[1m" if grasdeb else ""
+    return deb
 
-timeprecision = 1/1000
+def formaterfin():
+    fin = ""
+    fin += "\033[3m" if italiquefin else ""
+    fin += "\033[4m" if soulignefin else ""
+    fin += "\033[1m" if grasfin else ""
+    return fin
 
 async def afficher_paroles(mot, pas, estpremier, estdernier, afficher_suiv, phrasesuivante, tempssuivant, fluide=True, fluide2=0):
     delai = pas * timeprecision
@@ -131,7 +165,7 @@ async def afficher_paroles(mot, pas, estpremier, estdernier, afficher_suiv, phra
         for i in range(len(mot)):
             print(mot[i], end='' if not (estdernier and i==len(mot)-1) else '\n')
             if i < len(mot) - 1 and fluide2 == 0:
-                time.sleep(suiv/len(mot) if suiv < maxtime else 0.01)
+                time.sleep(suiv/len(mot) if suiv < maxtime else maxtimestep)
             elif i < len(mot) - 1 and fluide2 > 0 and fluide2*len(mot) < suiv:
                 time.sleep(fluide2)
             elif i < len(mot) - 1 and fluide2 > 0 and fluide2*len(mot) >= suiv and mintime > 0:
@@ -140,9 +174,11 @@ async def afficher_paroles(mot, pas, estpremier, estdernier, afficher_suiv, phra
         print(mot, end='' if not (estdernier) else '\n')
     
     if estdernier:
-        # print("\n")
+        print("\n"*sautdeligne, end='')
+        deb=formaterdeb()
+        fin=formaterfin()
         if afficher_suiv and phrasesuivante != "":
-            print(f"\033[38;2;{cb[0]};{cb[1]};{cb[2]}m{phrasesuivante}\033[38;2;{cf[0]};{cf[1]};{cf[2]}m", end='\r')
+            print(f"\033[0m{deb}\033[38;2;{cb[0]};{cb[1]};{cb[2]}m{phrasesuivante}\033[0m{fin}\033[38;2;{cf[0]};{cf[1]};{cf[2]}m", end='\r')
         
  
 async def karaoke():
@@ -154,14 +190,17 @@ async def karaoke():
         print(f"Erreur lors du chargement du fichier audio : {e}")
         return
 
-    pygame.mixer.music.play()
+    pygame.mixer.music.play(start=intro*timeprecision)
     print(f"Lecture de la musique : {mp3_file[2:]}\nParoles : {lyrics_txt_file[2:]}\nvaleurs : {osu_file[2:]}")
 
     tasks = []
     itemps = 0
-    print("Bonne chanson !\n")
+    print("Bonne chanson !")
+    print("\n"*sautdeligne, end='')
     if afficher_suiv:
-        print(f"\033[38;2;{cb[0]};{cb[1]};{cb[2]}m{''.join(lyrics[0])}\033[38;2;{cf[0]};{cf[1]};{cf[2]}m", end='\r')
+        deb=formaterdeb()
+        fin=formaterfin()
+        print(f"\033[0m{deb}\033[38;2;{cb[0]};{cb[1]};{cb[2]}m{''.join(lyrics[0])}\033[0m{fin}\033[38;2;{cf[0]};{cf[1]};{cf[2]}m", end='\r')
     for verse in range(len(lyrics)):
         for i, mot in enumerate(lyrics[verse]):
             if itemps < len(hitpoints):
@@ -172,7 +211,7 @@ async def karaoke():
                     phrasesuivante = "".join(lyrics[verse + 1]) if verse + 1 < len(lyrics) else ""
                     tempssuivant = int(hitpoints[itemps + 1]) if itemps + 1 < len(hitpoints) else 0
                     # print(f"Phrase suivante : {phrasesuivante}")
-                    task = asyncio.create_task(afficher_paroles(mot, pas, estpremier, estdernier, afficher_suiv, phrasesuivante, tempssuivant, fluide, fluide2))
+                    task = asyncio.create_task(afficher_paroles(mot, pas-intro, estpremier, estdernier, afficher_suiv, phrasesuivante, tempssuivant-intro, fluide, fluide2))
                     tasks.append(task)
                     itemps += 1
                 except ValueError:
