@@ -1,5 +1,14 @@
 import os
 
+def find_mp3_files(directory):
+    """Renvoie une liste de tous les fichiers mp3 dans le répertoire donné."""
+    mp3_files = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".mp3"):
+                mp3_files.append(os.path.join(root, file))
+    return mp3_files
+
 def parse_osu_file(file_path):
     hitobjects = []
     with open(file_path, 'r') as f:
@@ -70,6 +79,8 @@ def list_json_files():
 
 #####################################################################################################
 
+voixmoche=False
+
 os.system('cls' if os.name == 'nt' else 'clear')
 print("\033[?25h\033[0m")
 
@@ -91,6 +102,11 @@ if jsonsettings not in jsonlist:
     raise ValueError(f"Le fichier de paramètres '{jsonsettings}' n'est pas disponible.")
 print(f"Vous avez choisi le fichier de paramètres : {jsonsettings}")
 print()
+
+if voixmoche:
+    mp3_files = find_mp3_files(f"songs/{path}/syllabes")
+    if not mp3_files:
+        raise FileNotFoundError(f"Aucun fichier mp3 trouvé dans le répertoire {path}")
 
 osu_file = find_osu_file(path)
 lyrics_txt_file = find_lyrics_txt_file(path)
@@ -182,10 +198,13 @@ def formaterfin():
     fin += "\033[53m" if surlignefin else ""
     return fin
 
-async def afficher_paroles(mot, pas, estpremier, estdernier, afficher_suiv, phrasesuivante, tempssuivant, fluide=True, fluide2=0):
+async def afficher_paroles(mot, pas, estpremier, estdernier, afficher_suiv, phrasesuivante, tempssuivant, itemps, fluide=True, fluide2=0):
     delai = pas * timeprecision
     suiv = tempssuivant * timeprecision - delai
     await asyncio.sleep(delai)
+    if voixmoche:
+        effet = pygame.mixer.Sound(f"{mp3_files[itemps]}")
+        effet.play()
     if suiv > 0.1 and fluide:
         for i in range(len(mot)):
             print(mot[i], end='' if not (estdernier and i==len(mot)-1) else '\n')
@@ -236,7 +255,7 @@ async def karaoke():
                     phrasesuivante = "".join(lyrics[verse + 1]) if verse + 1 < len(lyrics) else ""
                     tempssuivant = int(hitpoints[itemps + 1]) if itemps + 1 < len(hitpoints) else 0
                     # print(f"Phrase suivante : {phrasesuivante}")
-                    task = asyncio.create_task(afficher_paroles(mot, pas-intro, estpremier, estdernier, afficher_suiv, phrasesuivante, tempssuivant-intro, fluide, fluide2))
+                    task = asyncio.create_task(afficher_paroles(mot, pas-intro, estpremier, estdernier, afficher_suiv, phrasesuivante, tempssuivant-intro, itemps, fluide, fluide2))
                     tasks.append(task)
                     itemps += 1
                 except ValueError:
