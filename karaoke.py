@@ -158,8 +158,10 @@ cb = settings.get("cb", [255, 255, 255])
 cf = settings.get("cf", [255, 255, 255])
 
 fluide = settings.get("fluide", False)
+ratio = settings.get("ratio", 0.75)
 maxtime = settings.get("maxtime", 0.5)
 maxtimestep = settings.get("maxtimestep", 0.02)
+lettresaignorer = settings.get("lettresaignorer", 0)
 
 fluide2 = settings.get("fluide2", 0)
 mintime = settings.get("mintime", 0.01)
@@ -208,11 +210,11 @@ async def afficher_paroles(mot, pas, estpremier, estdernier, afficher_suiv, phra
     if suiv > 0.1 and fluide:
         for i in range(len(mot)):
             print(mot[i], end='' if not (estdernier and i==len(mot)-1) else '\n')
-            if i < len(mot) - 1 and fluide2 == 0:
-                time.sleep(suiv/len(mot) if suiv < maxtime else maxtimestep)
-            elif i < len(mot) - 1 and fluide2 > 0 and fluide2*len(mot) < suiv:
+            if i < len(mot) - lettresaignorer and fluide2 == 0:
+                time.sleep((suiv/len(mot))*ratio if suiv < maxtime else maxtimestep)
+            elif i < len(mot) - lettresaignorer and fluide2 > 0 and fluide2*len(mot) < suiv:
                 time.sleep(fluide2)
-            elif i < len(mot) - 1 and fluide2 > 0 and fluide2*len(mot) >= suiv and mintime > 0:
+            elif i < len(mot) - lettresaignorer and fluide2 > 0 and fluide2*len(mot) >= suiv and mintime > 0:
                 time.sleep(mintime)
     else:
         print(mot, end='' if not (estdernier) else '\n')
