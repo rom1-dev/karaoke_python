@@ -66,7 +66,8 @@ def list_songs():
     songs = []
     for root, dirs, files in os.walk("./songs"):
         for dirname in dirs:
-            songs.append(dirname)
+            if dirname!= "syllabes":
+                songs.append(dirname)
     return songs
 
 def list_json_files():
