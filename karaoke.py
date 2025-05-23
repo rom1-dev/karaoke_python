@@ -1,4 +1,5 @@
 import os
+from nearest import find_nearest
 
 def find_mp3_files(directory):
     """Renvoie une liste de tous les fichiers mp3 dans le répertoire donné."""
@@ -90,18 +91,30 @@ songlist = list_songs()
 for i in songlist:
     print(f"- {i}")
 path = input("Quelle chanson voulez-vous choisir ?\n")
+correction = False
 if path not in songlist:
-    raise ValueError(f"La chanson '{path}' n'est pas disponible.")
-print(f"Vous avez choisi la chanson : {path}")
+    corr = find_nearest(path, songlist)
+    path = corr[0]
+    ratio = corr[1]
+    correction = True
+    if path not in songlist:
+        raise ValueError(f"La chanson '{path}' n'est pas disponible.")
+print(f"Vous avez choisi la chanson : {path}" + f" (correction : {ratio*100:.2f}%)" if correction else "")
 print()
 print("Paramètres disponibles :")
 jsonlist = list_json_files()
 for i in jsonlist:
     print(f"- {i}")
 jsonsettings = input("Quel fichier de paramètres voulez-vous choisir ?\n")
+correction = False
 if jsonsettings not in jsonlist:
-    raise ValueError(f"Le fichier de paramètres '{jsonsettings}' n'est pas disponible.")
-print(f"Vous avez choisi le fichier de paramètres : {jsonsettings}")
+    corr = find_nearest(jsonsettings, jsonlist)
+    jsonsettings = corr[0]
+    ratio = corr[1]
+    correction = True
+    if jsonsettings not in jsonlist:
+        raise ValueError(f"Le fichier de paramètres '{jsonsettings}' n'est pas disponible.")
+print(f"Vous avez choisi le fichier de paramètres : {jsonsettings}" + f" (correction : {ratio*100:.2f}%)" if correction else "")
 print()
 
 if voixmoche:
